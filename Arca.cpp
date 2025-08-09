@@ -62,15 +62,16 @@ SpriteManager spriteManager;
 
 class Ball {
 private:
-    float x, y;
+    float newX, newY;
     float vx, vy;
     float radius;
     int spriteId;
     bool isActive;
+    float prevX, prevY;
 
 public:
-    Ball(float startX, float startY, float r, int spriteID = 1)
-        : x(startX), y(startY), radius(r), isActive(true), spriteId(spriteID) {
+    Ball(float startX, float startY, float r, int spriteID = 1, float prevX, float prevY)
+        : newX(startX), newY(startY), radius(r), isActive(true), spriteId(spriteID), prevX(prevX), prevY(prevY) {
         vx = 0.0f;
         vy = 0.0f;
     }
@@ -80,22 +81,22 @@ public:
 
         Bitmap* sprite = spriteManager.GetSprite(spriteId);
         if (sprite) {
-            graphics.DrawImage(sprite, x - radius, y - radius, radius * 2, radius * 2);
+            graphics.DrawImage(sprite, newX - radius, newY - radius, radius * 2, radius * 2);
         }
         else {
             SolidBrush brush(Color(255, 255, 255));
-            graphics.FillEllipse(&brush, x - radius, y - radius, radius * 2, radius * 2);
+            graphics.FillEllipse(&brush, newX - radius, newY - radius, radius * 2, radius * 2);
         }
     }
 
     void Update() {
         if (!isActive) return;
-        x += vx;
-        y += vy;
+        newX = prevX + vx;
+        newY = prevY + vy;
     }
 
-    float GetX() const { return x; }
-    float GetY() const { return y; }
+    float GetX() const { return newX; }
+    float GetY() const { return newY; }
     float GetRadius() const { return radius; }
     float GetVX() const { return vx; }
     float GetVY() const { return vy; }
@@ -103,6 +104,13 @@ public:
     void SetVY(float newVY) { vy = newVY; }
 };
 
+struct Cords {
+    float x,y;
+};
+
+struct Line {
+    Cords p1, p2;
+};
 
 class Brick {
 private:
@@ -111,11 +119,26 @@ private:
     int spriteId;
     bool isDestroyed;
     int hitPoints;
+    Line left, top, right, bottom;
 
 public:
     Brick(float posX, float posY, float w, float h, int spriteID = 1001, int hp = 1)
         : x(posX), y(posY), width(w), height(h), spriteId(spriteID),
         isDestroyed(false), hitPoints(hp) {
+    }
+
+    void SidesUpdate(float x, float y, float width, float height) {
+        left.p1 = { x, y };
+        left.p2 = { x, (y + height) };
+
+        top.p1 = { x, y };
+        top.p2 = { (x + width), y };
+
+        right.p1 = { (x + width), y };
+        right.p2 = { (x + width), (y + height) };
+
+        bottom.p1 = { x, (y + height) };
+        bottom.p2 = { (x + width), (y + height) };
     }
 
     void Draw(Graphics& graphics) {
