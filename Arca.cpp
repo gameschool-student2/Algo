@@ -309,6 +309,42 @@ void ResetGameObjects(int screenWidth, int screenHeight) {
     }
 }
 
+void ResetLevel(HWND hWnd) {
+    bricks.clear();
+
+    int screenWidth = GetSystemMetrics(SM_CXSCREEN);
+    int screenHeight = GetSystemMetrics(SM_CYSCREEN);
+
+    ResetGameObjects(screenWidth, screenHeight);
+
+    int brickWidth = 128;
+    int brickHeight = 64;
+    int brickSpacing = 10;
+    int numCols = 10;
+    int numRows = 5;
+    int gridWidth = numCols * brickWidth + (numCols - 1) * brickSpacing;
+    int gridHeight = numRows * brickHeight + (numRows - 1) * brickSpacing;
+    int startX = (screenWidth - gridWidth) / 2;
+    int startY = (screenHeight - gridHeight) / 2.5;
+
+    for (int row = 0; row < numRows; row++) {
+        for (int col = 0; col < numCols; col++) {
+            bricks.emplace_back(
+                startX + col * (brickWidth + brickSpacing),
+                startY + row * (brickHeight + brickSpacing),
+                brickWidth, brickHeight,
+                1001,
+                row % 2 + 1
+            );
+        }
+    }
+
+    gameStarted = false;
+
+    InvalidateRect(hWnd, NULL, TRUE);
+}
+
+
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
     switch (message)
@@ -388,8 +424,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             gameStarted = true;
             if (pBall) {
                 float direction = (rand() % 2) ? 1.0f : -1.0f;
-                pBall->SetVX((rand() % 4 + 1.0f) * direction);
-                pBall->SetVY(-3.0f);
+                pBall->SetVX((rand() % 4 + 2.5f) * direction);
+                pBall->SetVY(-4.0f);
             }
         }
         if (wParam == 'A' || wParam == VK_LEFT) {
@@ -427,8 +463,14 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
             if (pBall->GetY() - pBall->GetRadius() > screenHeight) {
                 lives--;
-                gameStarted = false;
-                ResetGameObjects(screenWidth, screenHeight);
+                if (lives <= 0) {
+                    lives = 3;
+                    ResetLevel(hWnd);
+                }
+                else {
+                    gameStarted = false;
+                    ResetGameObjects(screenWidth, screenHeight);
+                }
             }
 
 
@@ -437,8 +479,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                 pBall->GetX() + pBall->GetRadius() >= pRacket->GetX() &&
                 pBall->GetX() - pBall->GetRadius() <= pRacket->GetX() + pRacket->GetWidth()) {
 
-                pBall->SetVY(-abs(pBall->GetVY()) * (1.01f + (rand() % 5 / 100.0f)));
-                pBall->SetVX(pBall->GetVX() * (1.01f + (rand() % 5 / 100.0f)));
+                pBall->SetVY(-abs(pBall->GetVY()) * (1.02f + (rand() % 5 / 100.0f)));
+                pBall->SetVX(pBall->GetVX() * (1.02f + (rand() % 5 / 100.0f)));
             }
             for (auto& brick : bricks) {
                 if (brick.CheckCollision(*pBall)) {
